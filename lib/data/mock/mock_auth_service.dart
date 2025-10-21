@@ -46,7 +46,6 @@ class MockAuthService {
       email: email,
       firstName: displayName.split(' ').first,
       lastName: displayName.split(' ').length > 1 ? displayName.split(' ').last : '',
-      role: 'user',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -79,7 +78,6 @@ class MockAuthService {
         email: _currentUser!.email,
         firstName: displayName?.split(' ').first ?? _currentUser!.firstName,
         lastName: displayName?.split(' ').last ?? _currentUser!.lastName,
-        role: _currentUser!.role,
         profileImageUrl: photoURL ?? _currentUser!.profileImageUrl,
         createdAt: _currentUser!.createdAt,
         updatedAt: DateTime.now(),
@@ -97,7 +95,6 @@ class MockAuthService {
         email: newEmail,
         firstName: _currentUser!.firstName,
         lastName: _currentUser!.lastName,
-        role: _currentUser!.role,
         profileImageUrl: _currentUser!.profileImageUrl,
         createdAt: _currentUser!.createdAt,
         updatedAt: DateTime.now(),

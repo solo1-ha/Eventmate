@@ -25,7 +25,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedRole = 'user'; // 'user' ou 'organizer'
 
   @override
   void dispose() {
@@ -169,9 +168,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-                // Sélection du rôle
-                _buildRoleSelector(theme),
-                const SizedBox(height: 24),
                 // Bouton d'inscription
                 CustomButton(
                   text: 'S\'inscrire',
@@ -228,107 +224,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
-  Widget _buildRoleSelector(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Je suis un(e)',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildRoleCard(
-                theme: theme,
-                role: 'user',
-                icon: Icons.person_rounded,
-                title: 'Utilisateur',
-                description: 'Je veux participer à des événements',
-                isSelected: _selectedRole == 'user',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildRoleCard(
-                theme: theme,
-                role: 'organizer',
-                icon: Icons.event_rounded,
-                title: 'Organisateur',
-                description: 'Je veux créer et gérer des événements',
-                isSelected: _selectedRole == 'organizer',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleCard({
-    required ThemeData theme,
-    required String role,
-    required IconData icon,
-    required String title,
-    required String description,
-    required bool isSelected,
-  }) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedRole = role;
-        });
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Colors.black87,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -343,13 +238,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       );
 
       if (userCredential.user != null) {
-        // Créer le profil utilisateur avec le rôle sélectionné
+        // Créer le profil utilisateur
         final newUser = UserModel(
           id: userCredential.user!.uid,
           email: _emailController.text.trim(),
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
-          role: _selectedRole, // Utilise le rôle sélectionné
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

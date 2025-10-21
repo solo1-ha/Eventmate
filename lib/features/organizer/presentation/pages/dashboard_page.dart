@@ -4,6 +4,12 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../data/providers/auth_provider.dart';
 import '../../../../data/providers/events_provider.dart';
 import '../../../../data/models/event_model.dart';
+import '../../../../data/services/firebase_service.dart';
+import '../../../../utils/create_test_event.dart';
+import 'event_participants_page.dart';
+import 'edit_event_page.dart';
+import 'qr_scanner_page.dart';
+import '../../../events/presentation/pages/manage_scanners_page.dart';
 
 /// Page du tableau de bord organisateur
 class OrganizerDashboardPage extends ConsumerWidget {
@@ -25,6 +31,14 @@ class OrganizerDashboardPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Tableau de Bord'),
         centerTitle: true,
+        actions: [
+          // Bouton pour créer des événements de test
+          IconButton(
+            icon: const Icon(Icons.science),
+            tooltip: 'Créer des événements de test',
+            onPressed: () => _createTestEvents(context, ref, user),
+          ),
+        ],
       ),
       body: myEventsAsync.when(
         data: (events) {
@@ -447,29 +461,339 @@ class OrganizerDashboardPage extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: event.isPast
-              ? theme.colorScheme.outline
-              : theme.colorScheme.primary,
-          child: Icon(
-            event.isPast ? Icons.event_busy : Icons.event,
-            color: Colors.white,
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: event.isPast
+                  ? theme.colorScheme.outline
+                  : theme.colorScheme.primary,
+              child: Icon(
+                event.isPast ? Icons.event_busy : Icons.event,
+                color: Colors.white,
+              ),
+            ),
+            title: Text(event.title),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  '${event.currentParticipants}/${event.maxCapacity} participants',
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${event.dateTime.day}/${event.dateTime.month}/${event.dateTime.year} à ${event.dateTime.hour}:${event.dateTime.minute.toString().padLeft(2, '0')}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+            trailing: event.isPaid
+                ? Chip(
+                    label: Text(event.formattedPrice),
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                  )
+                : const Chip(label: Text('Gratuit')),
           ),
+          const Divider(height: 1),
+          // Boutons d'action (ligne 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Voir les participants
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _viewParticipants(context, event),
+                    icon: const Icon(Icons.people, size: 18),
+                    label: const Text('Participants'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+                // Gérer les scanners
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _manageScanners(context, event),
+                    icon: const Icon(Icons.admin_panel_settings, size: 18),
+                    label: const Text('Scanners'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+                // Scanner QR
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _scanTickets(context, event),
+                    icon: const Icon(Icons.qr_code_scanner, size: 18),
+                    label: const Text('Scanner'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.purple,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Boutons d'action (ligne 2)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Modifier
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _editEvent(context, event),
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text('Modifier'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.orange,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+                // Supprimer
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _deleteEvent(context, event),
+                    icon: const Icon(Icons.delete, size: 18),
+                    label: const Text('Supprimer'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _viewParticipants(BuildContext context, EventModel event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventParticipantsPage(event: event),
+      ),
+    );
+  }
+
+  void _manageScanners(BuildContext context, EventModel event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageScannersPage(
+          eventId: event.id,
+          eventTitle: event.title,
         ),
-        title: Text(event.title),
-        subtitle: Text(
-          '${event.currentParticipants}/${event.maxCapacity} participants',
+      ),
+    );
+  }
+
+  void _scanTickets(BuildContext context, EventModel event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerPage(event: event),
+      ),
+    );
+  }
+
+  void _editEvent(BuildContext context, EventModel event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditEventPage(event: event),
+      ),
+    );
+  }
+
+  void _deleteEvent(BuildContext context, EventModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'événement'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Êtes-vous sûr de vouloir supprimer cet événement ?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${event.currentParticipants} participant(s) inscrit(s)',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '⚠️ Cette action est irréversible.',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        trailing: event.isPaid
-            ? Chip(
-                label: Text(event.formattedPrice),
-                backgroundColor: theme.colorScheme.primaryContainer,
-              )
-            : const Chip(label: Text('Gratuit')),
-        onTap: () {
-          // Navigation vers détails
-        },
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _confirmDeleteEvent(context, event);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteEvent(BuildContext context, EventModel event) async {
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Supprimer l'événement
+      await FirebaseService.deleteEvent(event.id);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Fermer le loader
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Événement supprimé avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Fermer le loader
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Fonction pour créer des événements de test
+  static Future<void> _createTestEvents(BuildContext context, WidgetRef ref, user) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🧪 Créer des événements de test'),
+        content: const Text(
+          'Voulez-vous créer 3 événements de test avec des tickets multiples ?\n\n'
+          '• Concert Rock (3 types de tickets)\n'
+          '• Conférence Tech (2 types)\n'
+          '• Match de Football (4 types)\n\n'
+          'Ces événements vous permettront de tester le système de tickets.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              // Afficher un loader
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+
+              try {
+                await createMultipleTestEvents(user.id, user.fullName);
+                
+                if (context.mounted) {
+                  Navigator.pop(context); // Fermer le loader
+                  
+                  // Rafraîchir la liste
+                  ref.invalidate(organizerEventsProvider(user.id));
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ 3 événements de test créés avec succès !'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Fermer le loader
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('❌ Erreur: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Créer'),
+          ),
+        ],
       ),
     );
   }

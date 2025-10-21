@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/events/presentation/pages/events_list_page.dart';
-import '../features/maps/presentation/pages/map_page.dart';
+import '../features/events/presentation/pages/my_tickets_page.dart';
+import '../features/maps/presentation/pages/openstreetmap_page.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/organizer/presentation/pages/dashboard_page.dart';
 import '../features/qr/presentation/pages/qr_scanner_page.dart';
@@ -20,10 +21,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final isOrganizer = user?.role == 'organizer' || user?.role == 'owner';
-
-    // Navigation items dynamiques selon le rôle
+    // Tous les utilisateurs ont accès aux mêmes fonctionnalités
     final navigationItems = [
       NavigationItem(
         icon: Icons.event,
@@ -33,14 +31,13 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       NavigationItem(
         icon: Icons.map,
         label: 'Carte',
-        page: const MapPage(),
+        page: const OpenStreetMapPage(),
       ),
-      if (isOrganizer)
-        NavigationItem(
-          icon: Icons.dashboard_rounded,
-          label: 'Dashboard',
-          page: const OrganizerDashboardPage(),
-        ),
+      NavigationItem(
+        icon: Icons.dashboard_rounded,
+        label: 'Mes événements',
+        page: const OrganizerDashboardPage(),
+      ),
       NavigationItem(
         icon: Icons.qr_code_scanner,
         label: 'Scanner',

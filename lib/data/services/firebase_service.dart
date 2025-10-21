@@ -162,6 +162,11 @@ class FirebaseService {
         .toList();
   }
 
+  /// Mise à jour d'un événement
+  static Future<void> updateEvent(EventModel event) async {
+    await eventsCollection.doc(event.id).update(event.toFirestore());
+  }
+
   /// Suppression d'un événement
   static Future<void> deleteEvent(String eventId) async {
     await eventsCollection.doc(eventId).update({'isActive': false});
@@ -196,6 +201,18 @@ class FirebaseService {
     return querySnapshot.docs
         .map((doc) => RegistrationModel.fromFirestore(doc))
         .toList();
+  }
+
+  /// Stream des inscriptions d'un événement
+  static Stream<List<RegistrationModel>> getEventRegistrations(String eventId) {
+    return registrationsCollection
+        .where('eventId', isEqualTo: eventId)
+        .where('isActive', isEqualTo: true)
+        .orderBy('registeredAt')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => RegistrationModel.fromFirestore(doc))
+            .toList());
   }
 
   /// Check-in d'un participant

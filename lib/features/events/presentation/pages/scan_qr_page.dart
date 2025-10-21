@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/services.dart';
+import '../../../../data/services/inscription_service.dart';
+import '../../../../data/services/authorized_scanners_service.dart';
+import '../../../../data/providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Page de scan QR Code
 class ScanQrPage extends ConsumerStatefulWidget {
@@ -14,6 +19,7 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
   late MobileScannerController controller;
   bool isScanning = true;
   String? lastScannedCode;
+  bool isProcessing = false;
 
   @override
   void initState() {
@@ -299,39 +305,158 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
   }
 
   void _handleScannedCode(String code) {
-    // TODO: Implémenter la logique de traitement du QR Code
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Code scanné: $code'),
-        action: SnackBarAction(
-          label: 'Traiter',
-          onPressed: () {
-            _processScannedCode(code);
-          },
-        ),
-      ),
-    );
+    if (isProcessing) return;
+    
+    // Pause le scan pendant le traitement
+    setState(() {
+      isScanning = false;
+      isProcessing = true;
+    });
+    controller.stop();
+    
+    _processScannedCode(code);
   }
 
-  void _processScannedCode(String code) {
-    // TODO: Implémenter le traitement du code scanné
-    // - Vérifier si c'est un code d'inscription valide
-    // - Effectuer le check-in du participant
-    // - Afficher les informations du participant
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Code scanné'),
-        content: Text('Traitement du code: $code'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+  Future<void> _processScannedCode(String code) async {
+    try {
+      // Extraire l'eventId du code QR (format: eventId_userId_timestamp)
+      final parts = code.split('_');
+      if (parts.length < 2) {
+        throw Exception('QR code invalide');
+      }
+      final eventId = parts[0];
+      
+      // Récupérer l'utilisateur actuel
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) {
+        throw Exception('Vous devez être connecté pour scanner');
+      }
+      
+      // Vérifier si l'utilisateur est autorisé à scanner
+      final isAuthorized = await AuthorizedScannersService.isAuthorizedToScan(
+        eventId: eventId,
+        userId: currentUser.id,
+      );
+      
+      if (!isAuthorized) {
+        throw Exception('Vous n\'êtes pas autorisé à scanner pour cet événement');
+      }
+      
+      // Effectuer le check-in
+      await InscriptionService.checkIn(code);
+      
+      // Vibration de succès
+      HapticFeedback.heavyImpact();
+      
+      if (mounted) {
+        // Afficher le succès
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            icon: const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 64,
+            ),
+            title: const Text('Check-in réussi !'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Le participant a été enregistré avec succès.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Code: ${code.substring(0, 20)}...',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _resumeScanning();
+                },
+                child: const Text('Scanner un autre'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context); // Retour à la page précédente
+                },
+                child: const Text('Terminer'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      // Vibration d'erreur
+      HapticFeedback.vibrate();
+      
+      if (mounted) {
+        // Afficher l'erreur
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            icon: const Icon(
+              Icons.error_outline,
+              color: Colors.red,
+              size: 64,
+            ),
+            title: const Text('Erreur'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  e.toString().replaceAll('Exception: ', ''),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Vérifiez que le QR code est valide et que le participant n\'a pas déjà effectué son check-in.',
+                  style: TextStyle(fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context); // Retour à la page précédente
+                },
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _resumeScanning();
+                },
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+  
+  void _resumeScanning() {
+    setState(() {
+      isScanning = true;
+      isProcessing = false;
+      lastScannedCode = null;
+    });
+    controller.start();
   }
 
   void _toggleScanning() {

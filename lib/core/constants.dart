@@ -6,11 +6,6 @@ class AppConstants {
   static const String backgroundColor = '#F5F5F5';
   static const String textColor = '#212121';
   
-  // Rôles utilisateur
-  static const String roleUser = 'user';
-  static const String roleOwner = 'owner';
-  static const String roleAdmin = 'admin';
-  
   // Collections Firestore
   static const String usersCollection = 'users';
   static const String eventsCollection = 'events';
@@ -18,7 +13,6 @@ class AppConstants {
   
   // Préférences
   static const String themeKey = 'theme_mode';
-  static const String userRoleKey = 'user_role';
   
   // Limites
   static const int maxEventCapacity = 1000;
@@ -42,5 +36,16 @@ class AppConstants {
   static const String successEventDeleted = 'Événement supprimé avec succès';
   static const String successRegistration = 'Inscription réussie';
   static const String successCheckIn = 'Check-in effectué avec succès';
+  
+  // Catégories d'événements
+  static const List<String> eventCategories = [
+    'Concert',
+    'Conférence',
+    'Sport',
+    'Festival',
+    'Meetup',
+    'Formation',
+    'Autre',
+  ];
 }
 

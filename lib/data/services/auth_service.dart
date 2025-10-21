@@ -64,7 +64,6 @@ class AuthService {
         firstName: firstName,
         lastName: lastName,
         phone: phone,
-        role: 'user', // Par défaut
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

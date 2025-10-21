@@ -84,80 +84,8 @@ class ProfileHeader extends StatelessWidget {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        // Rôle avec icône
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _getRoleColor(user.role).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _getRoleColor(user.role).withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _getRoleIcon(user.role),
-                size: 16,
-                color: _getRoleColor(user.role),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _getRoleDisplayName(user.role),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: _getRoleColor(user.role),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role) {
-      case 'admin':
-        return Colors.red;
-      case 'owner':
-      case 'organizer':
-        return Colors.orange;
-      case 'user':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getRoleIcon(String role) {
-    switch (role) {
-      case 'admin':
-        return Icons.admin_panel_settings_rounded;
-      case 'owner':
-      case 'organizer':
-        return Icons.event_rounded;
-      case 'user':
-        return Icons.person_rounded;
-      default:
-        return Icons.person_outline_rounded;
-    }
-  }
-
-  String _getRoleDisplayName(String role) {
-    switch (role) {
-      case 'admin':
-        return 'Administrateur';
-      case 'owner':
-      case 'organizer':
-        return 'Organisateur';
-      case 'user':
-        return 'Utilisateur';
-      default:
-        return 'Utilisateur';
-    }
   }
 }
 

@@ -7,7 +7,6 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String? phone;
-  final String role;
   final String? profileImageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -18,7 +17,6 @@ class UserModel {
     required this.firstName,
     required this.lastName,
     this.phone,
-    required this.role,
     this.profileImageUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -30,12 +28,6 @@ class UserModel {
   /// Initiales de l'utilisateur
   String get initials => '${firstName[0]}${lastName[0]}'.toUpperCase();
 
-  /// Vérifie si l'utilisateur est un propriétaire d'événement
-  bool get isOwner => role == 'owner' || role == 'admin';
-
-  /// Vérifie si l'utilisateur est un administrateur
-  bool get isAdmin => role == 'admin';
-
   /// Création d'un UserModel depuis Firestore
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -45,7 +37,6 @@ class UserModel {
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
       phone: data['phone'],
-      role: data['role'] ?? 'user',
       profileImageUrl: data['profileImageUrl'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
@@ -59,7 +50,6 @@ class UserModel {
       'firstName': firstName,
       'lastName': lastName,
       'phone': phone,
-      'role': role,
       'profileImageUrl': profileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -73,7 +63,6 @@ class UserModel {
     String? firstName,
     String? lastName,
     String? phone,
-    String? role,
     String? profileImageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -84,7 +73,6 @@ class UserModel {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       phone: phone ?? this.phone,
-      role: role ?? this.role,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -93,7 +81,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, email: $email, fullName: $fullName, role: $role)';
+    return 'UserModel(id: $id, email: $email, fullName: $fullName)';
   }
 
   @override

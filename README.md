@@ -1,221 +1,254 @@
-# EventMate 📅
+# 🎉 EventMate - Plateforme de Gestion d'Événements
 
-**EventMate** est une application mobile de gestion d'événements communautaires développée pour un projet étudiant en Guinée. L'application permet aux utilisateurs de créer, découvrir et participer à des événements locaux.
+> Application web complète de gestion d'événements avec système de tickets, QR codes et paiements intégrés
 
-## 📊 État du Projet
+## 📊 Informations du Projet
 
 **Version**: 1.0.0  
-**Statut**: Production-Ready (98% complet)  
-**Dernière mise à jour**: Octobre 2025
+**Statut**: ✅ Production Ready  
+**Date**: Octobre 2025  
+**Contexte**: Projet de Fin de Formation
 
-## 🚀 Fonctionnalités
+## ✨ Fonctionnalités Principales
 
-### 🔐 Authentification
-- Inscription et connexion sécurisées
+### 🎫 Système de Tickets Avancé
+- **Achat de plusieurs tickets** (1 à 10 personnes)
+- **Ajout des noms des participants**
+- **Génération automatique de QR codes** uniques
+- **Design professionnel** des tickets
+- **Affichage immédiat** après inscription
+- **Partage de tickets**
+- **Accès depuis le profil** utilisateur
+
+### 🔐 Authentification & Sécurité
+- Connexion/Inscription sécurisée (Firebase Auth)
 - Gestion des profils utilisateur
 - Rôles : Utilisateur, Organisateur, Administrateur
-- Réinitialisation de mot de passe
+- **Protection contre les inscriptions invalides** :
+  - ✅ Fermeture automatique pour événements passés
+  - ✅ Interdiction pour l'organisateur de s'inscrire
+  - ✅ Vérification de la capacité disponible
+  - ✅ Protection contre les inscriptions multiples
 
-### 📅 Gestion des événements
-- Création, modification et suppression d'événements
-- Détails complets : titre, description, date, lieu, capacité
-- Images d'événements
-- Recherche et filtres
-- Gestion des participants
-- **Événements payants** avec simulation de paiement
-- Catégories d'événements
-- Dashboard organisateur avec statistiques et graphiques
+### 📅 Gestion Complète des Événements
+- Création, modification et suppression
+- Upload d'images
+- **Types de tickets multiples** (VIP, Standard, etc.)
+- **Événements gratuits ou payants**
+- Gestion de la capacité
+- Dashboard organisateur avec statistiques
+- **Détection automatique des événements passés**
 
-### 🗺️ Localisation
-- Intégration Google Maps
-- Sélection de lieux sur carte
-- Géolocalisation automatique
-- Affichage des événements sur carte
+### 💳 Système de Paiement
+- **Paiement Orange Money** (simulation)
+- **Calcul automatique** du prix total
+- Support de plusieurs tickets en un paiement
+- Historique des transactions
 
-### 📱 QR Code
-- Génération de QR codes uniques pour chaque inscription
-- Scanner QR pour check-in
-- Gestion des présences
+### 📱 Scanner QR Code
+- Scan des tickets pour check-in
+- Validation en temps réel
+- Gestion des scanners autorisés
+- Historique des présences
 
-### 🎨 Interface utilisateur
-- Design moderne et fluide avec Material Design 3
-- Thème clair/sombre avec sélecteur (Clair/Sombre/Système)
-- Palette de couleurs Indigo moderne
-- Prévisualisation palette guinéenne (Rouge/Jaune/Vert)
-- Interface responsive
+### 🗺️ Géolocalisation
+- Carte interactive des événements
+- Sélection de lieu sur carte
+- Affichage des événements à proximité
+
+### 🎨 Interface Moderne
+- Design Material Design 3
+- Navigation à 5 onglets
 - Animations fluides
+- Responsive (mobile & desktop)
 
-### 🔔 Notifications
-- Notifications in-app (Firestore)
-- Firebase Cloud Messaging (FCM) configuré
-- Gestion des tokens FCM
-- Topics et abonnements
-- Prêt pour notifications push réelles
+## 🛠️ Stack Technique
 
-### 📴 Mode Hors Ligne
-- Cache local avec SharedPreferences
-- Synchronisation automatique
-- Détection de cache obsolète
-- Fonctionnement sans connexion
+### Frontend
+- **Flutter Web** - Framework de développement
+- **Dart** - Langage de programmation
+- **Material Design 3** - Design system
+- **Riverpod** - Gestion d'état
 
-## 🛠️ Technologies utilisées
+### Backend & Services
+- **Firebase Authentication** - Gestion des utilisateurs
+- **Cloud Firestore** - Base de données NoSQL temps réel
+- **Firebase Storage** - Stockage des images
+- **Firebase Cloud Messaging** - Notifications
 
-- **Frontend** : Flutter 3.9.2+
-- **State Management** : Riverpod 2.4.9
-- **Backend** : Firebase (Auth, Firestore, Storage, Messaging)
-- **Local Storage** : SharedPreferences
+### Fonctionnalités Techniques
 - **QR Code** : qr_flutter, mobile_scanner
-- **Maps** : Google Maps API, Geolocator, Geocoding
-- **Charts** : fl_chart 0.69.0
-- **Image** : image_picker
-- **Tests** : flutter_test, mockito
+- **Géolocalisation** : geolocator, geocoding
+- **Paiement** : Intégration Orange Money (simulation)
+- **Images** : image_picker, cached_network_image
 - **Utils** : intl, uuid, share_plus
 
-## 📁 Architecture du projet
+## 📁 Architecture
 
 ```
 lib/
-├─ core/                # Constantes, thèmes, utils
+├─ core/                    # Configuration, constantes, thèmes
 ├─ data/
-│  ├─ models/           # EventModel, UserModel, etc.
-│  ├─ services/         # Auth, Events, Payment, Cache, FCM, etc.
-│  └─ providers/        # Riverpod providers
+│  ├─ models/               # EventModel, UserModel, RegistrationModel, etc.
+│  ├─ services/             # Auth, Events, Inscriptions, Payment
+│  └─ providers/            # Riverpod state management
 ├─ features/
-│  ├─ auth/             # Connexion, inscription, profil
-│  ├─ events/           # Liste, création, détails, participants, QR
-│  ├─ organizer/        # Dashboard organisateur
-│  ├─ maps/             # Localisation Google Maps
-│  └─ settings/         # Préférences, thème
-├─ widgets/             # Composants réutilisables
+│  ├─ auth/                 # Authentification
+│  ├─ events/               # Gestion des événements
+│  ├─ organizer/            # Dashboard organisateur
+│  └─ maps/                 # Carte et géolocalisation
+├─ widgets/                 # Composants réutilisables
+│  ├─ inscription_button.dart
+│  ├─ event_ticket_screen.dart
+│  ├─ ticket_quantity_dialog.dart
+│  └─ ...
 └─ main.dart
-
-test/
-├─ unit/                # Tests unitaires (13 tests)
-└─ widget/              # Tests widgets
 ```
 
-## 🚀 Installation
+## 🚀 Installation & Lancement
 
-1. **Prérequis**
-   - Flutter SDK 3.9.2+
-   - Dart SDK
-   - Android Studio / VS Code
-   - Compte Firebase
+### Prérequis
+- Flutter SDK 3.9.2+
+- Compte Firebase
+- Navigateur Chrome (pour la version web)
 
-2. **Cloner le projet**
-   ```bash
-   git clone <repository-url>
-   cd eventmate
-   ```
-
-3. **Installer les dépendances**
-   ```bash
-   flutter pub get
-   ```
-
-4. **Configuration Firebase**
-   - Créer un projet Firebase
-   - Activer Authentication, Firestore, Storage
-   - Télécharger les fichiers de configuration :
-     - `android/app/google-services.json`
-     - `ios/Runner/GoogleService-Info.plist`
-
-5. **Configuration Google Maps**
-   - Obtenir une clé API Google Maps
-   - Ajouter la clé dans `android/app/src/main/AndroidManifest.xml`
-   - Ajouter la clé dans `ios/Runner/AppDelegate.swift`
-
-6. **Lancer l'application**
-   ```bash
-   flutter run
-   ```
-
-## 🎯 Rôles et permissions
-
-| Rôle | Droits |
-|------|--------|
-| **User** | Consulter les événements, s'inscrire, scanner son QR |
-| **Owner** | Créer/modifier/supprimer ses événements, scanner participants |
-| **Admin** | Gérer tous les événements, modérer les utilisateurs |
-
-## 🎨 Design
-
-L'application utilise Material Design 3 avec une palette moderne :
-
-- **Primaire** : #6366F1 (Indigo moderne)
-- **Secondaire** : #EC4899 (Rose vibrant)
-- **Accent** : #10B981 (Vert émeraude)
-- **Thèmes** : Clair, Sombre, Système
-- **Palette Guinéenne** : Rouge (#CE1126), Jaune (#FCD116), Vert (#009460) - À venir
-
-## 📱 Écrans principaux
-
-1. **Connexion/Inscription** - Authentification utilisateur avec sélection de rôle
-2. **Accueil** - Liste des événements avec recherche et filtres
-3. **Détail événement** - Informations complètes, inscription, paiement
-4. **Création événement** - Formulaire complet avec images et localisation
-5. **Dashboard** - Statistiques et graphiques pour organisateurs
-6. **Scanner QR** - Interface de scan pour check-in
-7. **Carte** - Affichage des événements sur Google Maps
-8. **Profil** - Gestion du compte utilisateur
-9. **Paramètres** - Préférences, thème, notifications
-
-## 🧪 Tests
+### Installation
 
 ```bash
-# Tests unitaires
-flutter test
+# 1. Cloner le projet
+git clone <repository-url>
+cd eventmate
 
-# Tests d'intégration
-flutter test integration_test/
+# 2. Installer les dépendances
+flutter pub get
+
+# 3. Lancer sur Chrome
+flutter run -d chrome
 ```
 
-## 📦 Build
+### Configuration Firebase
 
-```bash
-# Android
-flutter build apk --release
+1. Créer un projet sur [Firebase Console](https://console.firebase.google.com/)
+2. Activer les services :
+   - Authentication (Email/Password)
+   - Cloud Firestore
+   - Storage
+3. Déployer les règles Firestore :
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
 
-# iOS
-flutter build ios --release
-```
+## 🎯 Cas d'Usage
 
-## 🤝 Contribution
+### Pour les Utilisateurs
+1. **Découvrir des événements** - Parcourir, rechercher, filtrer
+2. **S'inscrire** - Acheter des tickets (1 à 10 personnes)
+3. **Payer** - Orange Money (simulation)
+4. **Recevoir son ticket** - QR code automatique
+5. **Participer** - Présenter le QR code à l'entrée
 
-1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+### Pour les Organisateurs
+1. **Créer un événement** - Gratuit ou payant
+2. **Gérer les inscriptions** - Voir les participants
+3. **Scanner les tickets** - Check-in avec QR code
+4. **Suivre les statistiques** - Dashboard complet
+
+## 🎨 Innovations & Points Forts
+
+### 1. Achat Multiple de Tickets
+Possibilité d'acheter pour plusieurs personnes en une seule transaction avec ajout des noms des participants.
+
+### 2. Gestion Intelligente des Événements Passés
+- Détection automatique des événements terminés
+- Bouton désactivé avec message "Événement terminé"
+- Protection côté serveur contre les inscriptions invalides
+
+### 3. Système de Tickets Professionnel
+- Design moderne avec QR code haute résolution
+- Affichage immédiat après inscription
+- Partage facile
+- Accessible depuis le profil
+
+### 4. Sécurité Robuste
+- Règles Firestore strictes
+- Validation côté client et serveur
+- Protection contre les abus
+
+## 📱 Navigation
+
+### 5 Onglets Principaux
+
+1. **📅 Événements** - Découverte et recherche
+2. **🗺️ Carte** - Géolocalisation des événements
+3. **🎪 Mes Événements** - Événements créés (organisateurs)
+4. **📱 Scanner** - Check-in des participants
+5. **👤 Profil** - Compte utilisateur et tickets
+
+## 📊 Statistiques
+
+- **Lignes de code** : ~5000+
+- **Fichiers Dart** : 50+
+- **Widgets personnalisés** : 25+
+- **Modèles de données** : 6
+- **Services** : 5
+- **Pages** : 15+
+
+## 🎓 Compétences Démontrées
+
+### Techniques
+- ✅ Développement Flutter/Dart
+- ✅ Architecture MVC/MVVM
+- ✅ Gestion d'état (Riverpod)
+- ✅ Base de données NoSQL (Firestore)
+- ✅ Authentification et sécurité
+- ✅ Intégration de services cloud
+- ✅ Génération de QR codes
+- ✅ Géolocalisation
+
+### Fonctionnelles
+- ✅ Analyse des besoins
+- ✅ Conception d'architecture
+- ✅ Développement full-stack
+- ✅ Tests et débogage
+- ✅ Documentation
+
+## 📈 Évolutions Futures
+
+### Court Terme
+- Notifications push réelles
+- Système de favoris
+- Recherche avancée
+- Filtres multiples
+
+### Moyen Terme
+- Application mobile native
+- Paiement Orange Money réel
+- Chat entre participants
+- Recommandations personnalisées
+
+### Long Terme
+- IA pour suggestions d'événements
+- Analytics avancés
+- Programme de fidélité
+- API publique
+
+## 👨‍💻 Auteur
+
+**Projet de Fin de Formation**  
+Octobre 2025
 
 ## 📄 Licence
 
-Ce projet est développé dans le cadre d'un projet étudiant en Guinée.
-
-## 👥 Équipe
-
-- **Développement** : Étudiants en informatique
-- **Supervision** : Professeurs et mentors
-- **Contexte** : Projet académique guinéen
-
-## 📞 Support
-
-Pour toute question ou support :
-- Email : support@eventmate.gn
-- Documentation complète : Voir `COMPLETION_FINALE.md`
-- Guide Firebase : Voir `FIREBASE_SETUP.md`
-- Plan d'action : Voir `PLAN_ACTION_COMPLETION.md`
-
-## 📚 Documentation Supplémentaire
-
-- `COMPLETION_FINALE.md` - Documentation complète de la version finale
-- `IMPLEMENTATION_FINALE.md` - Détails des fonctionnalités implémentées
-- `PLAN_ACTION_COMPLETION.md` - Roadmap et prochaines étapes
-- `FIREBASE_SETUP.md` - Configuration Firebase
-- `GUIDE_UPLOAD_IMAGE.md` - Guide d'upload d'images
+Projet académique - Tous droits réservés
 
 ---
 
-**EventMate** - Connecter les communautés guinéennes à travers les événements 📅🇬🇳
+<div align="center">
 
-**Version 1.0.0** - Production-Ready (98% complet) ✅
+### 🎉 EventMate - Gérez vos événements en toute simplicité
+
+**Version 1.0.0** | **Production Ready** ✅
+
+*Développé avec ❤️ en Flutter*
+
+</div>

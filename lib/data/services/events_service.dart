@@ -8,11 +8,11 @@ class EventsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Récupérer tous les événements
+  /// Récupérer tous les événements (triés du plus récent au plus ancien)
   Stream<List<EventModel>> getAllEvents() {
     return _firestore
         .collection('events')
-        .orderBy('dateTime', descending: false)
+        .orderBy('dateTime', descending: true) // Événements récents en premier
         .snapshots()
         .map((snapshot) {
       return snapshot.docs

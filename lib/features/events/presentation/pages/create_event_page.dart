@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../data/models/event_model.dart';
+import '../../../../data/models/ticket_type.dart';
 import '../../../../data/services/firebase_service.dart';
 import '../../../../data/providers/auth_provider.dart';
 import '../../../../data/providers/events_provider.dart';
 import '../../../../widgets/custom_button.dart';
 import '../../../../widgets/custom_text_field.dart';
+import '../../../../widgets/ticket_type_dialog.dart';
+import '../../../../widgets/map_picker_web_safe.dart';
 import '../../../../core/constants.dart';
 
 /// Page de création d'événement
@@ -31,6 +34,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   String? _imageUrl;
   bool _isPaid = false;
   String _selectedCategory = 'Autre';
+  
+  // Coordonnées GPS
+  double? _latitude;
+  double? _longitude;
+  
+  // Gestion des types de tickets
+  List<TicketType> _ticketTypes = [];
+  bool _useMultipleTickets = false;
 
   @override
   void dispose() {
@@ -215,25 +226,44 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   _buildEventTypeSelector(theme),
                   if (_isPaid) ...[
                     const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Prix du ticket (GNF)',
-                      hint: 'Ex: 50000',
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      prefixIcon: const Icon(Icons.attach_money_rounded),
-                      validator: (value) {
-                        if (_isPaid && (value == null || value.isEmpty)) {
-                          return 'Veuillez entrer un prix';
-                        }
-                        if (_isPaid) {
-                          final price = double.tryParse(value!);
-                          if (price == null || price < 0) {
-                            return 'Le prix doit être un nombre positif';
+                    // Option pour plusieurs types de tickets
+                    CheckboxListTile(
+                      title: const Text('Plusieurs types de tickets'),
+                      subtitle: const Text('Standard, VIP, Super VIP, etc.'),
+                      value: _useMultipleTickets,
+                      onChanged: (value) {
+                        setState(() {
+                          _useMultipleTickets = value ?? false;
+                          if (_useMultipleTickets && _ticketTypes.isEmpty) {
+                            // Ajouter un ticket par défaut
+                            _ticketTypes.add(const TicketType(type: 'Standard', price: 5000));
                           }
-                        }
-                        return null;
+                        });
                       },
                     ),
+                    const SizedBox(height: 16),
+                    if (_useMultipleTickets)
+                      _buildTicketTypesSection(theme)
+                    else
+                      CustomTextField(
+                        label: 'Prix du ticket (GNF)',
+                        hint: 'Ex: 50000',
+                        controller: _priceController,
+                        keyboardType: TextInputType.number,
+                        prefixIcon: const Icon(Icons.attach_money_rounded),
+                        validator: (value) {
+                          if (_isPaid && !_useMultipleTickets && (value == null || value.isEmpty)) {
+                            return 'Veuillez entrer un prix';
+                          }
+                          if (_isPaid && !_useMultipleTickets) {
+                            final price = double.tryParse(value!);
+                            if (price == null || price < 0) {
+                              return 'Le prix doit être un nombre positif';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
                   ],
                   const SizedBox(height: 32),
                   // Bouton de sauvegarde
@@ -483,21 +513,31 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   }
 
   Future<void> _selectLocationOnMap() async {
-    // TODO: Implémenter la sélection de lieu sur la carte
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité de sélection de lieu à implémenter'),
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPickerWebSafe(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+          initialAddress: _locationController.text,
+        ),
       ),
     );
+
+    if (result != null) {
+      setState(() {
+        _latitude = result['latitude'];
+        _longitude = result['longitude'];
+        _locationController.text = result['address'] ?? '';
+      });
+    }
   }
 
   Widget _buildCategorySelector(ThemeData theme) {
-    final categories = ['Concert', 'Conférence', 'Sport', 'Festival', 'Meetup', 'Formation', 'Autre'];
-    
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: categories.map((category) {
+      children: AppConstants.eventCategories.map((category) {
         final isSelected = _selectedCategory == category;
         return FilterChip(
           label: Text(category),
@@ -619,6 +659,131 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     );
   }
 
+  Widget _buildTicketTypesSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Types de tickets',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _addTicketType,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Ajouter'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ..._ticketTypes.asMap().entries.map((entry) {
+          final index = entry.key;
+          final ticket = entry.value;
+          return _buildTicketTypeCard(theme, ticket, index);
+        }),
+        if (_ticketTypes.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            child: const Center(
+              child: Text('Aucun type de ticket ajouté'),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTicketTypeCard(ThemeData theme, TicketType ticket, int index) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.confirmation_number,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ticket.type,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    ticket.formattedPrice,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 20),
+              onPressed: () => _editTicketType(index),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, size: 20),
+              color: Colors.red,
+              onPressed: () => _removeTicketType(index),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addTicketType() {
+    showDialog(
+      context: context,
+      builder: (context) => TicketTypeDialog(
+        onSave: (type, price) {
+          setState(() {
+            _ticketTypes.add(TicketType(type: type, price: price));
+          });
+        },
+      ),
+    );
+  }
+
+  void _editTicketType(int index) {
+    final ticket = _ticketTypes[index];
+    showDialog(
+      context: context,
+      builder: (context) => TicketTypeDialog(
+        initialType: ticket.type,
+        initialPrice: ticket.price,
+        onSave: (type, price) {
+          setState(() {
+            _ticketTypes[index] = TicketType(type: type, price: price);
+          });
+        },
+      ),
+    );
+  }
+
+  void _removeTicketType(int index) {
+    setState(() {
+      _ticketTypes.removeAt(index);
+    });
+  }
+
   Future<void> _saveEvent() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -646,8 +811,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         description: _descriptionController.text.trim(),
         dateTime: eventDateTime,
         location: _locationController.text.trim(),
-        latitude: 9.6412, // Conakry par défaut
-        longitude: -13.5784,
+        latitude: _latitude ?? 9.6412, // Conakry par défaut si non défini
+        longitude: _longitude ?? -13.5784,
         maxCapacity: int.parse(_capacityController.text),
         currentParticipants: 0,
         imageUrl: _imageUrl,
@@ -658,9 +823,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         updatedAt: DateTime.now(),
         isActive: true,
         isPaid: _isPaid,
-        price: _isPaid && _priceController.text.isNotEmpty 
+        price: _isPaid && !_useMultipleTickets && _priceController.text.isNotEmpty 
             ? double.parse(_priceController.text) 
             : null,
+        ticketTypes: _useMultipleTickets ? _ticketTypes : [],
         currency: 'GNF',
         soldTickets: 0,
         category: _selectedCategory,

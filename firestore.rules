@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // FONCTIONS HELPER
+    // ========================================
+    
+    // Vérifier si l'utilisateur est authentifié
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Vérifier si l'utilisateur est le propriétaire
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Vérifier si l'utilisateur est l'organisateur d'un événement
+    function isEventOrganizer(eventId) {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/events/$(eventId)).data.organizerId == request.auth.uid;
+    }
+    
+    // Vérifier si une date est dans le futur
+    function isInFuture(eventDate) {
+      return eventDate > request.time;
+    }
+    
+    // ========================================
+    // COLLECTION DES UTILISATEURS
+    // ========================================
+    
+    match /users/{userId} {
+      // Lecture : tout utilisateur authentifié peut lire les profils
+      allow read: if isSignedIn();
+      
+      // Écriture : uniquement le propriétaire du profil
+      allow write: if isOwner(userId);
+    }
+    
+    // ========================================
+    // COLLECTION DES ÉVÉNEMENTS
+    // ========================================
+    
+    match /events/{eventId} {
+      // Lecture publique (même non authentifié pour la découverte)
+      allow read: if true;
+      
+      // Création : utilisateur authentifié, doit être l'organisateur
+      allow create: if isSignedIn() && 
+                       request.resource.data.organizerId == request.auth.uid;
+      
+      // Modification : uniquement l'organisateur
+      allow update: if isSignedIn() && 
+                       resource.data.organizerId == request.auth.uid;
+      
+      // Suppression : uniquement l'organisateur
+      allow delete: if isSignedIn() && 
+                       resource.data.organizerId == request.auth.uid;
+      
+      // ========================================
+      // SOUS-COLLECTION : SCANNERS AUTORISÉS
+      // ========================================
+      
+      match /authorizedScanners/{scannerId} {
+        // Lecture : tout utilisateur authentifié
+        allow read: if isSignedIn();
+        
+        // Création/Suppression : uniquement l'organisateur de l'événement
+        allow create, delete: if isEventOrganizer(eventId);
+        
+        // Pas de modification (on supprime et recrée si besoin)
+        allow update: if false;
+      }
+    }
+    
+    // ========================================
+    // COLLECTION DES INSCRIPTIONS
+    // ========================================
+    
+    match /registrations/{registrationId} {
+      // Lecture : utilisateur authentifié peut lire ses propres inscriptions
+      allow read: if isSignedIn();
+      
+      // Création : utilisateur authentifié qui s'inscrit lui-même
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Modification : utilisateur inscrit OU organisateur (pour check-in)
+      allow update: if isSignedIn();
+      
+      // Suppression : utilisateur inscrit
+      allow delete: if isSignedIn() && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // ========================================
+    // COLLECTION DES NOTIFICATIONS (optionnel)
+    // ========================================
+    
+    match /notifications/{notificationId} {
+      // Lecture : uniquement le destinataire
+      allow read: if isSignedIn() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Création : tout utilisateur authentifié
+      allow create: if isSignedIn();
+      
+      // Modification : uniquement le destinataire (pour marquer comme lu)
+      allow update: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+      
+      // Suppression : uniquement le destinataire
+      allow delete: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+    }
+  }
+}

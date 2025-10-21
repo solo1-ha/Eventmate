@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ticket_type.dart';
 
 /// Modèle d'événement
 class EventModel {
@@ -19,7 +20,8 @@ class EventModel {
   final DateTime updatedAt;
   final bool isActive;
   final bool isPaid;
-  final double? price;
+  final double? price; // Prix unique (ancien système)
+  final List<TicketType> ticketTypes; // Nouveaux types de tickets multiples
   final String currency;
   final int soldTickets;
   final String? category;
@@ -43,6 +45,7 @@ class EventModel {
     required this.isActive,
     this.isPaid = false,
     this.price,
+    this.ticketTypes = const [],
     this.currency = 'GNF',
     this.soldTickets = 0,
     this.category,
@@ -82,12 +85,44 @@ class EventModel {
   int get availableTickets => maxCapacity - soldTickets;
 
   /// Revenu total généré
-  double get totalRevenue => soldTickets * (price ?? 0);
+  double get totalRevenue {
+    if (ticketTypes.isEmpty) {
+      return soldTickets * (price ?? 0);
+    }
+    // Pour les événements avec plusieurs types de tickets,
+    // ce calcul est approximatif. Le vrai revenu est calculé
+    // à partir des inscriptions individuelles.
+    return 0;
+  }
+
+  /// Vérifie si l'événement a plusieurs types de tickets
+  bool get hasMultipleTicketTypes => ticketTypes.isNotEmpty;
+
+  /// Prix minimum des tickets
+  double get minTicketPrice {
+    if (ticketTypes.isEmpty) return price ?? 0;
+    return ticketTypes.map((t) => t.price).reduce((a, b) => a < b ? a : b);
+  }
+
+  /// Prix maximum des tickets
+  double get maxTicketPrice {
+    if (ticketTypes.isEmpty) return price ?? 0;
+    return ticketTypes.map((t) => t.price).reduce((a, b) => a > b ? a : b);
+  }
 
   /// Prix formaté
   String get formattedPrice {
-    if (!isPaid || price == null) return 'Gratuit';
-    return '${price!.toStringAsFixed(0)} $currency';
+    if (!isPaid) return 'Gratuit';
+    if (ticketTypes.isEmpty && price != null) {
+      return '${price!.toStringAsFixed(0)} $currency';
+    }
+    if (ticketTypes.isNotEmpty) {
+      if (minTicketPrice == maxTicketPrice) {
+        return '${minTicketPrice.toStringAsFixed(0)} $currency';
+      }
+      return '${minTicketPrice.toStringAsFixed(0)} - ${maxTicketPrice.toStringAsFixed(0)} $currency';
+    }
+    return 'Gratuit';
   }
 
   /// Création d'un EventModel depuis Firestore
@@ -112,6 +147,9 @@ class EventModel {
       isActive: data['isActive'] ?? true,
       isPaid: data['isPaid'] ?? false,
       price: data['price']?.toDouble(),
+      ticketTypes: (data['ticketTypes'] as List<dynamic>?)
+          ?.map((t) => TicketType.fromMap(t as Map<String, dynamic>))
+          .toList() ?? [],
       currency: data['currency'] ?? 'GNF',
       soldTickets: data['soldTickets'] ?? 0,
       category: data['category'],
@@ -138,6 +176,7 @@ class EventModel {
       'isActive': isActive,
       'isPaid': isPaid,
       'price': price,
+      'ticketTypes': ticketTypes.map((t) => t.toMap()).toList(),
       'currency': currency,
       'soldTickets': soldTickets,
       'category': category,
@@ -164,6 +203,7 @@ class EventModel {
     bool? isActive,
     bool? isPaid,
     double? price,
+    List<TicketType>? ticketTypes,
     String? currency,
     int? soldTickets,
     String? category,
@@ -187,6 +227,7 @@ class EventModel {
       isActive: isActive ?? this.isActive,
       isPaid: isPaid ?? this.isPaid,
       price: price ?? this.price,
+      ticketTypes: ticketTypes ?? this.ticketTypes,
       currency: currency ?? this.currency,
       soldTickets: soldTickets ?? this.soldTickets,
       category: category ?? this.category,

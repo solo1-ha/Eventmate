@@ -31,21 +31,3 @@ final isLoggedInProvider = Provider<bool>((ref) {
   );
 });
 
-/// Provider pour le rôle de l'utilisateur
-final userRoleProvider = Provider<String?>((ref) {
-  final userData = ref.watch(currentUserProvider);
-  return userData?.role;
-});
-
-/// Provider pour vérifier si l'utilisateur est propriétaire
-final isOwnerProvider = Provider<bool>((ref) {
-  final role = ref.watch(userRoleProvider);
-  return role == 'owner' || role == 'admin';
-});
-
-/// Provider pour vérifier si l'utilisateur est administrateur
-final isAdminProvider = Provider<bool>((ref) {
-  final role = ref.watch(userRoleProvider);
-  return role == 'admin';
-});
-

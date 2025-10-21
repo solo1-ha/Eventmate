@@ -6,8 +6,11 @@ import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/events/presentation/pages/events_list_page.dart';
 import '../features/events/presentation/pages/event_detail_page.dart';
 import '../features/events/presentation/pages/create_event_page.dart';
+import '../features/events/presentation/pages/my_tickets_page.dart';
 import '../features/events/presentation/pages/scan_qr_page.dart';
+import '../features/events/presentation/pages/test_scanners_page.dart';
 import '../features/maps/presentation/pages/map_page.dart';
+import '../features/maps/presentation/pages/openstreetmap_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../widgets/main_navigation.dart';
 
@@ -19,8 +22,11 @@ class AppRouter {
   static const String events = '/events';
   static const String eventDetail = '/event-detail';
   static const String createEvent = '/create-event';
+  static const String myTickets = '/my-tickets';
   static const String scanQr = '/scan-qr';
+  static const String testScanners = '/test-scanners';
   static const String map = '/map';
+  static const String openStreetMap = '/openstreetmap';
   static const String profile = '/profile';
   static const String settings = '/settings';
 
@@ -72,9 +78,21 @@ class AppRouter {
           settings: routeSettings,
         );
       
+      case myTickets:
+        return MaterialPageRoute(
+          builder: (_) => const MyTicketsPage(),
+          settings: routeSettings,
+        );
+      
       case scanQr:
         return MaterialPageRoute(
           builder: (_) => const ScanQrPage(),
+          settings: routeSettings,
+        );
+      
+      case testScanners:
+        return MaterialPageRoute(
+          builder: (_) => const TestScannersPage(),
           settings: routeSettings,
         );
       
@@ -89,6 +107,12 @@ class AppRouter {
             longitude: longitude,
             title: title,
           ),
+          settings: routeSettings,
+        );
+      
+      case openStreetMap:
+        return MaterialPageRoute(
+          builder: (_) => const OpenStreetMapPage(),
           settings: routeSettings,
         );
       

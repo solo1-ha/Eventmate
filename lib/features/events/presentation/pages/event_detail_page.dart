@@ -4,10 +4,15 @@ import '../../../../data/providers/events_provider.dart';
 import '../../../../data/providers/auth_provider.dart';
 import '../../../../widgets/custom_button.dart';
 import '../../../../widgets/loading_widget.dart';
+import '../../../../widgets/inscription_button.dart';
+import '../../../../widgets/simple_inscription_button.dart';
 import '../../../../core/app_router.dart';
 import '../widgets/event_info_section.dart';
 import '../widgets/participants_section.dart';
 import 'event_qr_page.dart';
+import 'ticket_selection_page.dart';
+import 'participants_list_page.dart';
+import 'manage_scanners_page.dart';
 
 /// Page de détail d'un événement
 class EventDetailPage extends ConsumerWidget {
@@ -23,7 +28,6 @@ class EventDetailPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final event = ref.watch(eventProvider(eventId));
     final currentUser = ref.watch(currentUserProvider);
-    final isOwner = ref.watch(isOwnerProvider);
 
     return Scaffold(
       body: event.when(
@@ -52,7 +56,8 @@ class EventDetailPage extends ConsumerWidget {
                       : _buildPlaceholderImage(theme),
                 ),
                 actions: [
-                  if (isOwner && eventData.organizerId == currentUser?.id)
+                  // Tous les utilisateurs peuvent gérer leurs propres événements
+                  if (eventData.organizerId == currentUser?.id)
                     PopupMenuButton(
                       itemBuilder: (context) => [
                         const PopupMenuItem(
@@ -86,7 +91,7 @@ class EventDetailPage extends ConsumerWidget {
                     ParticipantsSection(eventId: eventId),
                     const SizedBox(height: 24),
                     // Boutons d'action
-                    _buildActionButtons(context, eventData, isOwner, ref),
+                    _buildActionButtons(context, eventData, ref),
                   ]),
                 ),
               ),
@@ -142,21 +147,31 @@ class EventDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, eventData, bool isOwner, WidgetRef ref) {
+  Widget _buildActionButtons(BuildContext context, eventData, WidgetRef ref) {
     final currentUser = ref.read(currentUserProvider);
     final isRegistered = eventData.participantIds.contains(currentUser?.id);
+    final isMyEvent = eventData.organizerId == currentUser?.id;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (isOwner && eventData.organizerId == currentUser?.id) ...[
+        // Tous les utilisateurs peuvent gérer leurs propres événements
+        if (isMyEvent) ...[
           // Boutons pour l'organisateur
           CustomButton(
             text: 'Voir les participants',
-            onPressed: () => _viewParticipants(context, eventData.id),
+            onPressed: () => _viewParticipants(context, eventData.id, eventData.title),
             type: ButtonType.primary,
             size: ButtonSize.large,
             icon: Icons.people,
+          ),
+          const SizedBox(height: 12),
+          CustomButton(
+            text: 'Gérer les scanners',
+            onPressed: () => _manageScanners(context, eventData.id, eventData.title),
+            type: ButtonType.secondary,
+            size: ButtonSize.large,
+            icon: Icons.admin_panel_settings,
           ),
           const SizedBox(height: 12),
           CustomButton(
@@ -167,54 +182,19 @@ class EventDetailPage extends ConsumerWidget {
             icon: Icons.qr_code_scanner,
           ),
         ] else ...[
-          // Bouton QR Code si inscrit
-          if (isRegistered) ...[
-            CustomButton(
-              text: 'Voir mon QR Code',
-              onPressed: () => _showMyQRCode(context, eventData, currentUser!.id),
-              type: ButtonType.primary,
-              size: ButtonSize.large,
-              icon: Icons.qr_code,
-            ),
-            const SizedBox(height: 12),
-          ],
-          // Boutons pour les participants
-          if (eventData.isFull)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.error.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Cet événement est complet',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          // Bouton d'inscription (gère automatiquement tous les états)
+          if (currentUser != null)
+            InscriptionButton(
+              event: eventData,
+              user: currentUser,
             )
           else
             CustomButton(
-              text: 'S\'inscrire',
-              onPressed: () => _registerForEvent(context, eventData.id),
-              type: ButtonType.primary,
+              text: 'Connectez-vous pour vous inscrire',
+              onPressed: () => Navigator.pushNamed(context, AppRouter.login),
+              type: ButtonType.secondary,
               size: ButtonSize.large,
-              icon: Icons.person_add,
+              icon: Icons.login,
             ),
         ],
         const SizedBox(height: 12),
@@ -267,11 +247,26 @@ class EventDetailPage extends ConsumerWidget {
     );
   }
 
-  void _viewParticipants(BuildContext context, String eventId) {
-    // TODO: Implémenter la vue des participants
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité de participants à implémenter'),
+  void _viewParticipants(BuildContext context, String eventId, String eventTitle) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ParticipantsListPage(
+          eventId: eventId,
+          eventTitle: eventTitle,
+        ),
+      ),
+    );
+  }
+
+  void _manageScanners(BuildContext context, String eventId, String eventTitle) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageScannersPage(
+          eventId: eventId,
+          eventTitle: eventTitle,
+        ),
       ),
     );
   }
@@ -295,24 +290,9 @@ class EventDetailPage extends ConsumerWidget {
     );
   }
 
-  void _registerForEvent(BuildContext context, String eventId) {
-    // TODO: Implémenter l'inscription
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité d\'inscription à implémenter'),
-      ),
-    );
-  }
 
   void _viewOnMap(BuildContext context, eventData) {
-    Navigator.pushNamed(
-      context,
-      AppRouter.map,
-      arguments: {
-        'latitude': eventData.latitude,
-        'longitude': eventData.longitude,
-        'title': eventData.title,
-      },
-    );
+    // Ouvrir la carte OpenStreetMap
+    Navigator.pushNamed(context, AppRouter.openStreetMap);
   }
 }
