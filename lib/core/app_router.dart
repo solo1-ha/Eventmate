@@ -12,6 +12,7 @@ import '../features/events/presentation/pages/test_scanners_page.dart';
 import '../features/maps/presentation/pages/map_page.dart';
 import '../features/maps/presentation/pages/openstreetmap_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
+import '../features/admin/admin_page.dart';
 import '../widgets/main_navigation.dart';
 
 /// Routeur principal de l'application
@@ -29,6 +30,7 @@ class AppRouter {
   static const String openStreetMap = '/openstreetmap';
   static const String profile = '/profile';
   static const String settings = '/settings';
+  static const String admin = '/admin';
 
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
@@ -125,6 +127,12 @@ class AppRouter {
       case settings:
         return MaterialPageRoute(
           builder: (_) => const SettingsPage(),
+          settings: routeSettings,
+        );
+      
+      case admin:
+        return MaterialPageRoute(
+          builder: (_) => const AdminPage(),
           settings: routeSettings,
         );
       

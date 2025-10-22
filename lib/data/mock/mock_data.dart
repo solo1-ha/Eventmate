@@ -9,7 +9,19 @@ class MockData {
     email: 'demo@eventmate.gn',
     firstName: 'Utilisateur',
     lastName: 'Demo',
+    role: 'user', // Utilisateur normal
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
+    updatedAt: DateTime.now(),
+  );
+
+  // Utilisateur admin pour les tests
+  static final UserModel adminUser = UserModel(
+    id: 'mock-admin-1',
+    email: 'admin@eventmate.gn',
+    firstName: 'Admin',
+    lastName: 'EventMate',
+    role: 'admin', // Administrateur
+    createdAt: DateTime.now().subtract(const Duration(days: 100)),
     updatedAt: DateTime.now(),
   );
 
@@ -128,11 +140,13 @@ class MockData {
   // Utilisateurs mockés
   static final List<UserModel> users = [
     currentUser,
+    adminUser,
     UserModel(
       id: 'mock-user-2',
       email: 'tech@eventmate.gn',
       firstName: 'Tech',
       lastName: 'Community GN',
+      role: 'organizer',
       createdAt: DateTime.now().subtract(const Duration(days: 60)),
       updatedAt: DateTime.now(),
     ),
@@ -141,6 +155,7 @@ class MockData {
       email: 'sport@eventmate.gn',
       firstName: 'Club',
       lastName: 'Athlétique',
+      role: 'organizer',
       createdAt: DateTime.now().subtract(const Duration(days: 90)),
       updatedAt: DateTime.now(),
     ),
@@ -149,6 +164,7 @@ class MockData {
       email: 'art@eventmate.gn',
       firstName: 'Association',
       lastName: 'des Artistes',
+      role: 'user',
       createdAt: DateTime.now().subtract(const Duration(days: 45)),
       updatedAt: DateTime.now(),
     ),
@@ -157,6 +173,7 @@ class MockData {
       email: 'jazz@eventmate.gn',
       firstName: 'Jazz',
       lastName: 'Club GN',
+      role: 'user',
       createdAt: DateTime.now().subtract(const Duration(days: 120)),
       updatedAt: DateTime.now(),
     ),

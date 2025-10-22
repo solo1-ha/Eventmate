@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 import '../../../../data/providers/auth_provider.dart';
 import '../../../../data/models/registration_model.dart';
 import '../../../../data/models/event_model.dart';
@@ -192,6 +195,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   _buildMyTicketsSection(theme),
                   
                   const SizedBox(height: 32),
+                  
                   // Bouton de déconnexion
                   CustomButton(
                     text: 'Se déconnecter',
@@ -278,12 +282,89 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _pickProfileImage() async {
-    // TODO: Implémenter la sélection d'image
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité de sélection d\'image à implémenter'),
-      ),
-    );
+    try {
+      final ImagePicker picker = ImagePicker();
+      
+      // Afficher un dialog pour choisir la source
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Photo de profil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galerie'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Caméra'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
+      // Sélectionner l'image
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (image == null) return;
+
+      setState(() => _isLoading = true);
+
+      // Upload vers Firebase Storage
+      final user = FirebaseAuth.instance.currentUser!;
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('${user.uid}.jpg');
+
+      // Upload le fichier
+      await storageRef.putFile(File(image.path));
+
+      // Obtenir l'URL de téléchargement
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      // Mettre à jour Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'profileImageUrl': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      setState(() => _isLoading = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo de profil mise à jour !'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _logout() async {

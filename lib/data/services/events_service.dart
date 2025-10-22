@@ -84,6 +84,11 @@ class EventsService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Utilisateur non connecté');
 
+    // VALIDATION : Empêcher la création d'événements passés
+    if (dateTime.isBefore(DateTime.now())) {
+      throw Exception('Impossible de créer un événement dans le passé');
+    }
+
     try {
       final eventRef = _firestore.collection('events').doc();
       

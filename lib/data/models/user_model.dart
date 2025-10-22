@@ -8,6 +8,7 @@ class UserModel {
   final String lastName;
   final String? phone;
   final String? profileImageUrl;
+  final String role; // 'user', 'organizer', 'admin'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -18,6 +19,7 @@ class UserModel {
     required this.lastName,
     this.phone,
     this.profileImageUrl,
+    this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,6 +29,12 @@ class UserModel {
 
   /// Initiales de l'utilisateur
   String get initials => '${firstName[0]}${lastName[0]}'.toUpperCase();
+
+  /// Vérifie si l'utilisateur est admin
+  bool get isAdmin => role == 'admin';
+
+  /// Vérifie si l'utilisateur est organisateur
+  bool get isOrganizer => role == 'organizer' || role == 'admin';
 
   /// Création d'un UserModel depuis Firestore
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -38,6 +46,7 @@ class UserModel {
       lastName: data['lastName'] ?? '',
       phone: data['phone'],
       profileImageUrl: data['profileImageUrl'],
+      role: data['role'] ?? 'user',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -51,6 +60,7 @@ class UserModel {
       'lastName': lastName,
       'phone': phone,
       'profileImageUrl': profileImageUrl,
+      'role': role,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -64,6 +74,7 @@ class UserModel {
     String? lastName,
     String? phone,
     String? profileImageUrl,
+    String? role,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -74,6 +85,7 @@ class UserModel {
       lastName: lastName ?? this.lastName,
       phone: phone ?? this.phone,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
